@@ -59,6 +59,9 @@ from paper_trading_config import PAPER_TRADING_ENABLED, PAPER_TRADING_BALANCE
 # Trade Logger for Excel export
 from trade_logger import TradeLogger, init_trade_logger
 
+# RL Configuration
+from rl_config import RL_ENABLED
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -72,6 +75,9 @@ logger = logging.getLogger(__name__)
 
 # Trade logger instance
 trade_logger: TradeLogger = None
+
+# RL Decision Maker instance
+rl_decision_maker = None
 
 # =============================================================================
 # CONFIGURATION
@@ -172,6 +178,12 @@ def print_bot_started_banner():
     print(f"💰 Risk per Trade: ₹{RISK_PER_TRADE:,.2f}")
     print(f"📈 Risk Reward Ratio: 1:{RISK_REWARD_RATIO}")
     print(f"📋 Watchlist: {len(watchlist)} symbols")
+    if RL_ENABLED and rl_decision_maker is not None:
+        print(f"🤖 RL Enhancement: ACTIVE (PPO agent)")
+    elif RL_ENABLED:
+        print(f"🤖 RL Enhancement: ENABLED but failed to initialize")
+    else:
+        print(f"🤖 RL Enhancement: DISABLED")
     print("=" * 100 + "\n")
 
 
@@ -222,7 +234,7 @@ def print_monitor_header(symbol: str):
 def initialize_bot():
     """Initialize the trading bot."""
     global tsl, ws_manager, data_limiter, order_limiter, watchlist
-    global RISK_PER_TRADE, trade_logger
+    global RISK_PER_TRADE, trade_logger, rl_decision_maker
 
     print("\nGroww Algo Bot Version 1.0")
     print("-----Connecting to Groww-----")
@@ -252,6 +264,24 @@ def initialize_bot():
 
     # Initialize WebSocket manager
     ws_manager = WebSocketManager(API_KEY)
+
+    # Connect paper trading simulator to WebSocket manager for price synchronization
+    if PAPER_TRADING_ENABLED and hasattr(tsl, 'set_ws_manager'):
+        tsl.set_ws_manager(ws_manager)
+
+    # Initialize RL Decision Maker if enabled
+    if RL_ENABLED:
+        try:
+            from rl_agent import RLDecisionMaker
+            from rl_config import USE_PRETRAINED_MODEL, PRETRAINED_MODEL_PATH
+            rl_decision_maker = RLDecisionMaker(
+                load_pretrained=USE_PRETRAINED_MODEL,
+                model_path=PRETRAINED_MODEL_PATH if USE_PRETRAINED_MODEL else None
+            )
+            print("🤖 RL Decision Maker initialized")
+        except Exception as e:
+            print(f"⚠️ RL initialization failed (continuing without RL): {e}")
+            rl_decision_maker = None
 
     # Get initial watchlist
     print("Fetching watchlist from best performing sectors...")
@@ -389,6 +419,25 @@ def remove_position(symbol: str, exit_price: float, reason: str) -> float:
             exit_reason=reason
         )
 
+    # RL: learn from trade outcome
+    if rl_decision_maker is not None:
+        try:
+            from rl_reward import RewardCalculator
+            reward_calc = RewardCalculator()
+            reward = reward_calc.calculate_reward(
+                action_taken=True,
+                position_opened=False,
+                position_closed=True,
+                entry_price=entry_price,
+                exit_price=exit_price,
+                quantity=quantity,
+                exit_reason=reason.split()[0].upper() if reason else "UNKNOWN"
+            )
+            rl_decision_maker.learn_from_trade(reward, done=False)
+            print(f"🤖 RL learned from trade: reward={reward:.4f}")
+        except Exception as e:
+            logger.error(f"RL learning error: {e}")
+
     # Unsubscribe from WebSocket
     if ws_manager:
         ws_manager.unsubscribe(symbol)
@@ -491,6 +540,25 @@ def execute_ce_trade(symbol: str, df: pd.DataFrame, signal: Dict) -> None:
     try:
         print(f"\n🟢 CE Entry Signal for {symbol}")
 
+        # RL decision layer: should we take this signal?
+        rl_params = {}
+        if rl_decision_maker is not None:
+            session_stats = {
+                "daily_pnl": todays_pnl,
+                "win_rate": 0,
+                "trades_today": todays_orders,
+                "max_trades": MAX_ORDERS_TODAY
+            }
+            rl_action = rl_decision_maker.should_take_signal(df, "CE", None, session_stats)
+            if not rl_action["take_signal"]:
+                print(f"🤖 RL SKIP: Confidence {rl_action['confidence']:.1%} - skipping CE signal for {symbol}")
+                return
+            print(f"🤖 RL TAKE: Confidence {rl_action['confidence']:.1%} | "
+                  f"Size mult: {rl_action['position_size_multiplier']:.2f} | "
+                  f"SL adj: {rl_action['sl_adjustment']:.2f} | "
+                  f"Target adj: {rl_action['target_adjustment']:.2f}")
+            rl_params = rl_action
+
         result = execute_ce_entry(
             tsl=tsl,
             symbol=symbol,
@@ -525,6 +593,25 @@ def execute_pe_trade(symbol: str, df: pd.DataFrame, signal: Dict) -> None:
     """Execute a PE (Put) trade."""
     try:
         print(f"\n🔴 PE Entry Signal for {symbol}")
+
+        # RL decision layer: should we take this signal?
+        rl_params = {}
+        if rl_decision_maker is not None:
+            session_stats = {
+                "daily_pnl": todays_pnl,
+                "win_rate": 0,
+                "trades_today": todays_orders,
+                "max_trades": MAX_ORDERS_TODAY
+            }
+            rl_action = rl_decision_maker.should_take_signal(df, "PE", None, session_stats)
+            if not rl_action["take_signal"]:
+                print(f"🤖 RL SKIP: Confidence {rl_action['confidence']:.1%} - skipping PE signal for {symbol}")
+                return
+            print(f"🤖 RL TAKE: Confidence {rl_action['confidence']:.1%} | "
+                  f"Size mult: {rl_action['position_size_multiplier']:.2f} | "
+                  f"SL adj: {rl_action['sl_adjustment']:.2f} | "
+                  f"Target adj: {rl_action['target_adjustment']:.2f}")
+            rl_params = rl_action
 
         result = execute_pe_entry(
             tsl=tsl,

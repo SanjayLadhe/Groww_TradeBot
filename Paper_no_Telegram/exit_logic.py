@@ -230,13 +230,14 @@ def execute_exit(
     try:
         logger.info(f"Executing exit for {symbol}, Qty: {quantity}")
 
-        # Place market sell order
+        # Place market sell order (pass exit_price so simulator uses correct price)
         order_result = tsl.place_order(
             symbol=symbol,
             exchange=tsl.NFO,
             transaction_type=tsl.SELL,
             quantity=quantity,
             order_type=tsl.ORDER_TYPE_MARKET,
+            price=exit_price if exit_price else 0,
             product_type=tsl.PRODUCT_INTRADAY
         )
 

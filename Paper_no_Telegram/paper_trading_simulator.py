@@ -116,6 +116,9 @@ class PaperTradingSimulator:
         # Simulated price cache
         self._price_cache: Dict[str, float] = {}
 
+        # Shared WebSocket manager reference for price synchronization
+        self._ws_manager = None
+
         # Threading lock
         self._lock = threading.Lock()
 
@@ -124,6 +127,16 @@ class PaperTradingSimulator:
 
         logger.info("Paper Trading Simulator initialized")
         logger.info(f"Starting Balance: {self._balance:,.2f}")
+
+    def set_ws_manager(self, ws_manager):
+        """
+        Set WebSocket manager reference for price synchronization.
+        This ensures order execution uses the same prices as monitoring.
+
+        Args:
+            ws_manager: WebSocketManager instance
+        """
+        self._ws_manager = ws_manager
 
     def _init_log_file(self):
         """Initialize paper trading log file."""
@@ -179,6 +192,7 @@ class PaperTradingSimulator:
     def _simulate_price(self, symbol: str, base_price: float = None) -> float:
         """
         Get simulated price for a symbol.
+        Uses WebSocket manager price when available to ensure consistency.
 
         Args:
             symbol: Trading symbol
@@ -187,21 +201,33 @@ class PaperTradingSimulator:
         Returns:
             Simulated current price
         """
+        # Try to get price from shared WebSocket manager first (ensures consistency)
+        if self._ws_manager is not None:
+            try:
+                ws_price = self._ws_manager.get_ltp(symbol)
+                if ws_price and ws_price > 0:
+                    self._price_cache[symbol] = ws_price
+                    return ws_price
+            except Exception:
+                pass
+
         if base_price:
-            # Small random variation
-            variation = random.uniform(-0.5, 0.5) / 100
-            return round(base_price * (1 + variation), 2)
+            # Small random variation around base price
+            variation = random.uniform(-0.3, 0.3) / 100
+            price = round(base_price * (1 + variation), 2)
+            self._price_cache[symbol] = price
+            return price
 
         if symbol in self._price_cache:
             # Vary from cached price
             cached = self._price_cache[symbol]
-            variation = random.uniform(-0.5, 0.5) / 100
+            variation = random.uniform(-0.3, 0.3) / 100
             new_price = round(cached * (1 + variation), 2)
             self._price_cache[symbol] = new_price
             return new_price
 
-        # Generate new price
-        new_price = round(100 + random.random() * 200, 2)
+        # Generate new price based on symbol hash for consistency
+        new_price = round(100 + (hash(symbol) % 200) + random.random() * 5, 2)
         self._price_cache[symbol] = new_price
         return new_price
 
@@ -495,23 +521,31 @@ class PaperTradingSimulator:
         interval: str = "5m",
         num_candles: int = 100
     ) -> pd.DataFrame:
-        """Generate simulated candle data."""
+        """Generate simulated candle data ending at current price."""
         import numpy as np
 
         dates = pd.date_range(end=datetime.now(), periods=num_candles, freq='5min')
-        base_price = self._simulate_price(symbol)
+        current_price = self._simulate_price(symbol)
 
-        returns = np.random.randn(num_candles) * 0.005
-        prices = base_price * (1 + np.cumsum(returns))
+        # Generate price history that ends at the current price
+        # Walk backwards from current price
+        returns = np.random.randn(num_candles) * 0.004
+        # Cumulative returns working backwards, then reverse
+        cum_returns = np.cumsum(returns)
+        # Shift so the last price equals current_price
+        prices = current_price * np.exp(cum_returns - cum_returns[-1])
 
+        # Generate realistic OHLCV
+        volatility = current_price * 0.003  # ~0.3% per candle
         df = pd.DataFrame({
-            'open': prices + np.random.randn(num_candles) * 0.5,
-            'high': prices + np.abs(np.random.randn(num_candles)) * 1,
-            'low': prices - np.abs(np.random.randn(num_candles)) * 1,
+            'open': prices + np.random.randn(num_candles) * volatility * 0.5,
+            'high': prices + np.abs(np.random.randn(num_candles)) * volatility,
+            'low': prices - np.abs(np.random.randn(num_candles)) * volatility,
             'close': prices,
-            'volume': np.random.randint(1000, 10000, num_candles)
+            'volume': np.random.randint(5000, 50000, num_candles)
         }, index=dates)
 
+        # Ensure OHLC consistency
         df['high'] = df[['open', 'high', 'close']].max(axis=1)
         df['low'] = df[['open', 'low', 'close']].min(axis=1)
 
@@ -539,16 +573,39 @@ class PaperTradingSimulator:
         return f"{underlying} {expiry} {int(strike)} {option_type}"
 
     def get_lot_size(self, symbol: str) -> int:
-        """Get lot size."""
-        lot_sizes = {
+        """Get lot size for F&O symbols."""
+        # Index lot sizes
+        index_lots = {
             "NIFTY": 25,
             "BANKNIFTY": 15,
             "FINNIFTY": 25,
-            "MIDCPNIFTY": 50
+            "MIDCPNIFTY": 50,
         }
-        for key, lot in lot_sizes.items():
+        for key, lot in index_lots.items():
             if key in symbol.upper():
                 return lot
+
+        # Stock option lot sizes (NSE F&O - commonly traded)
+        stock_lots = {
+            "RELIANCE": 250, "TCS": 150, "HDFCBANK": 550, "INFY": 300,
+            "ICICIBANK": 700, "HINDUNILVR": 300, "ITC": 1600, "SBIN": 750,
+            "BHARTIARTL": 475, "KOTAKBANK": 400, "LT": 150, "AXISBANK": 600,
+            "BAJFINANCE": 125, "ASIANPAINT": 200, "MARUTI": 100,
+            "TITAN": 175, "SUNPHARMA": 350, "ULTRACEMCO": 50,
+            "NESTLEIND": 25, "WIPRO": 1500, "HCLTECH": 350,
+            "POWERGRID": 2700, "NTPC": 1500, "ADANIENT": 250,
+            "TATAMOTORS": 575, "TATASTEEL": 550, "COALINDIA": 1050,
+            "ONGC": 1925, "JSWSTEEL": 450, "HINDALCO": 850,
+            "GRASIM": 250, "DRREDDY": 125, "DIVISLAB": 100,
+            "CIPLA": 325, "APOLLOHOSP": 125, "BRITANNIA": 100,
+            "TECHM": 300, "INDUSINDBK": 450, "ADANIPORTS": 500,
+            "BAJAJFINSV": 250,
+        }
+        sym_upper = symbol.upper()
+        for key, lot in stock_lots.items():
+            if key in sym_upper:
+                return lot
+
         return 1
 
     def get_expiry_dates(self, symbol: str) -> List[str]:

@@ -732,7 +732,7 @@ class Tradehull:
                 if mask.any():
                     return int(self.instruments_df.loc[mask, 'lot_size'].values[0])
 
-            # Default lot sizes
+            # Index lot sizes
             default_lots = {
                 "NIFTY": 25,
                 "BANKNIFTY": 15,
@@ -742,6 +742,27 @@ class Tradehull:
 
             for key, lot in default_lots.items():
                 if key in symbol.upper():
+                    return lot
+
+            # Stock option lot sizes (NSE F&O - commonly traded)
+            stock_lots = {
+                "RELIANCE": 250, "TCS": 150, "HDFCBANK": 550, "INFY": 300,
+                "ICICIBANK": 700, "HINDUNILVR": 300, "ITC": 1600, "SBIN": 750,
+                "BHARTIARTL": 475, "KOTAKBANK": 400, "LT": 150, "AXISBANK": 600,
+                "BAJFINANCE": 125, "ASIANPAINT": 200, "MARUTI": 100,
+                "TITAN": 175, "SUNPHARMA": 350, "ULTRACEMCO": 50,
+                "NESTLEIND": 25, "WIPRO": 1500, "HCLTECH": 350,
+                "POWERGRID": 2700, "NTPC": 1500, "ADANIENT": 250,
+                "TATAMOTORS": 575, "TATASTEEL": 550, "COALINDIA": 1050,
+                "ONGC": 1925, "JSWSTEEL": 450, "HINDALCO": 850,
+                "GRASIM": 250, "DRREDDY": 125, "DIVISLAB": 100,
+                "CIPLA": 325, "APOLLOHOSP": 125, "BRITANNIA": 100,
+                "TECHM": 300, "INDUSINDBK": 450, "ADANIPORTS": 500,
+                "BAJAJFINSV": 250,
+            }
+            sym_upper = symbol.upper()
+            for key, lot in stock_lots.items():
+                if key in sym_upper:
                     return lot
 
             return 1

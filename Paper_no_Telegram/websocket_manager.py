@@ -220,23 +220,27 @@ class WebSocketManager:
             LTP as float, 0 if not available
         """
         try:
-            # Check cache first
+            # For paper trading, always simulate price movement
+            if self.paper_trading:
+                import random
+                with self._lock:
+                    if symbol not in self._ltp_data:
+                        # Generate initial price based on symbol hash for consistency
+                        base = 100 + (hash(symbol) % 200)
+                        self._ltp_data[symbol] = round(float(base), 2)
+                    else:
+                        # Simulate realistic price movement each call
+                        current = self._ltp_data[symbol]
+                        # Random walk: ~0.3% movement per tick
+                        pct_change = (random.random() - 0.48) * 0.006  # Slight upward bias
+                        new_price = current * (1 + pct_change)
+                        self._ltp_data[symbol] = round(max(0.05, new_price), 2)
+                    return self._ltp_data[symbol]
+
+            # For live trading, check cache first
             with self._lock:
                 if symbol in self._ltp_data:
                     return self._ltp_data[symbol]
-
-            # For paper trading, generate simulated price
-            if self.paper_trading:
-                import random
-                # Generate a reasonable price based on symbol
-                if symbol not in self._ltp_data:
-                    base = 100 + random.random() * 200
-                    self._ltp_data[symbol] = round(base, 2)
-                else:
-                    # Small random movement
-                    change = (random.random() - 0.5) * 2
-                    self._ltp_data[symbol] = round(self._ltp_data[symbol] + change, 2)
-                return self._ltp_data[symbol]
 
             # Try fetching from feed
             if self.feed:
@@ -251,6 +255,17 @@ class WebSocketManager:
         except Exception as e:
             logger.error(f"Error getting LTP for {symbol}: {e}")
             return 0.0
+
+    def set_ltp(self, symbol: str, price: float):
+        """
+        Set LTP for a symbol (used to sync prices between systems).
+
+        Args:
+            symbol: Trading symbol
+            price: Price to set
+        """
+        with self._lock:
+            self._ltp_data[symbol] = round(price, 2)
 
     def get_bid_ask(self, symbol: str) -> Dict[str, float]:
         """

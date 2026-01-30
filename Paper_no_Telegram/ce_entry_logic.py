@@ -322,13 +322,14 @@ def execute_ce_entry(
         logger.info(f"  Entry: {entry_price:.2f}, SL: {stop_loss:.2f}, Target: {target:.2f}")
         logger.info(f"  Lots: {lots}, Quantity: {quantity}")
 
-        # Place the order
+        # Place the order (pass entry_price so simulator uses consistent price)
         order_result = tsl.place_order(
             symbol=option_symbol,
             exchange=tsl.NFO,
             transaction_type=tsl.BUY,
             quantity=quantity,
             order_type=tsl.ORDER_TYPE_MARKET,
+            price=entry_price,
             product_type=tsl.PRODUCT_INTRADAY
         )
 
