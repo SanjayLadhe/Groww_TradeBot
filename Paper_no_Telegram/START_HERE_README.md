@@ -1,6 +1,16 @@
-# Groww Algo Trading Bot
+# Groww Algo Trading Bot (RL-Enhanced)
 
-A comprehensive algorithmic trading bot for **Groww Broker** platform, adapted from the Dhan_Algo_New project structure.
+A comprehensive algorithmic trading bot for **Groww Broker** platform with **Reinforcement Learning** optimization.
+
+## New: RL Enhancement
+
+The bot now includes an optional **Reinforcement Learning layer** that optimizes:
+- **Entry decisions** - Whether to take a signal or skip it
+- **Position sizing** - How aggressively to trade (lot multiplier)
+- **Risk parameters** - Adaptive stop loss and target adjustments
+- **Exit timing** - When to exit early or let profits run
+
+Your base strategy (VWAP, ADX, ATR, Fractal) remains unchanged. The RL acts as a **meta-layer** that learns to optimize decisions on top of your strategy.
 
 ## Quick Links
 
@@ -43,11 +53,12 @@ API_SECRET = "YOUR_GROWW_API_SECRET"
 ```
 Groww_Algo/
 ├── Installation/
-│   ├── requirements.txt         # Python dependencies
+│   ├── requirements.txt         # Python dependencies (incl. PyTorch)
 │   └── install_libraries.sh     # Installation script
 │
 └── Paper_no_Telegram/
-    ├── single_trade_focus_bot.py    # Main trading bot
+    ├── single_trade_focus_bot.py    # Original trading bot (no RL)
+    ├── rl_enhanced_bot.py           # 🆕 RL-enhanced trading bot
     ├── Groww_Tradehull.py           # Groww API wrapper
     │
     ├── ENTRY/EXIT LOGIC
@@ -61,6 +72,13 @@ Groww_Algo/
     ├── adx_indicator.py             # ADX indicator
     ├── Fractal_Chaos_Bands.py       # Fractal bands
     │
+    ├── REINFORCEMENT LEARNING (NEW)
+    ├── rl_config.py                 # 🆕 RL configuration
+    ├── rl_state_builder.py          # 🆕 State vector builder
+    ├── rl_agent.py                  # 🆕 PPO agent & neural network
+    ├── rl_reward.py                 # 🆕 Reward functions
+    ├── rl_trainer.py                # 🆕 Training script
+    │
     ├── PAPER TRADING
     ├── paper_trading_config.py      # Configuration
     ├── paper_trading_simulator.py   # Simulator
@@ -69,6 +87,7 @@ Groww_Algo/
     ├── UTILITIES
     ├── websocket_manager.py         # Live data streaming
     ├── rate_limiter.py              # API rate limiting
+    ├── trade_logger.py              # Excel export & logging
     └── SectorPerformanceAnalyzer.py # Watchlist generation
 ```
 
@@ -123,6 +142,105 @@ Default settings in `single_trade_focus_bot.py`:
 - Option stop loss: 15%
 - ATR multiplier: 3
 - Risk/Reward ratio: 3
+
+## Reinforcement Learning Mode
+
+### Quick Start (RL Mode)
+
+1. **Train the RL agent** (optional, can also learn online):
+```bash
+python rl_trainer.py --mode train --episodes 1000
+```
+
+2. **Run RL-enhanced bot**:
+```bash
+python rl_enhanced_bot.py
+```
+
+### RL Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    RL-ENHANCED TRADING SYSTEM                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────┐ │
+│  │  MARKET DATA    │───▶│  YOUR STRATEGY  │───▶│   SIGNAL    │ │
+│  │  (OHLCV)        │    │  (VWAP,ADX,ATR) │    │   (CE/PE)   │ │
+│  └─────────────────┘    └─────────────────┘    └──────┬──────┘ │
+│                                                        │        │
+│                                                        ▼        │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                     RL META-LAYER (PPO)                     ││
+│  ├─────────────────────────────────────────────────────────────┤│
+│  │  STATE:                                                     ││
+│  │  • Technical indicators (VWAP, ADX, ATR, Fractal)          ││
+│  │  • Price action features                                    ││
+│  │  • Position state (P&L, duration, distance to SL)          ││
+│  │  • Session stats (daily P&L, win rate)                     ││
+│  │  • Time features (time of day, time to close)              ││
+│  ├─────────────────────────────────────────────────────────────┤│
+│  │  ACTIONS:                                                   ││
+│  │  • Take signal or Skip (discrete)                          ││
+│  │  • Position size multiplier: 0.5x - 2.0x                   ││
+│  │  • Stop loss adjustment: 0.8x - 1.2x                       ││
+│  │  • Target adjustment: 0.8x - 1.5x                          ││
+│  │  • Trailing stop factor: 0.5x - 1.5x                       ││
+│  └──────────────────────────────┬──────────────────────────────┘│
+│                                  │                               │
+│                                  ▼                               │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                    OPTIMIZED TRADE EXECUTION                ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### RL Configuration (`rl_config.py`)
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `RL_ENABLED` | True | Enable/disable RL optimization |
+| `RL_ALGORITHM` | PPO | Algorithm (PPO recommended) |
+| `LEARNING_RATE` | 3e-4 | Neural network learning rate |
+| `MIN_CONFIDENCE_TO_ACT` | 0.6 | Minimum confidence to take signal |
+| `HIDDEN_LAYERS` | [256, 128, 64] | Neural network architecture |
+
+### RL Files
+
+| File | Purpose |
+|------|---------|
+| `rl_config.py` | RL configuration and hyperparameters |
+| `rl_state_builder.py` | Builds state vector from market data |
+| `rl_agent.py` | PPO agent and neural network |
+| `rl_reward.py` | Reward calculation functions |
+| `rl_enhanced_bot.py` | Main RL-enhanced trading bot |
+| `rl_trainer.py` | Offline training script |
+
+### Training Modes
+
+**1. Online Learning (Default)**
+The agent learns while paper trading in real-time.
+
+**2. Offline Training**
+Train on synthetic data before live trading:
+```bash
+python rl_trainer.py --mode train --episodes 1000
+```
+
+**3. Evaluation**
+Test a trained model:
+```bash
+python rl_trainer.py --mode evaluate --model models/best_model.pt
+```
+
+### Safety Features
+
+The RL cannot override these hard limits:
+- Max position size: 10 lots
+- Stop loss range: 5% - 30%
+- Target range: 5% - 100%
+- Max daily trades: 5
+- Confidence threshold: 60%
 
 ## Support
 
