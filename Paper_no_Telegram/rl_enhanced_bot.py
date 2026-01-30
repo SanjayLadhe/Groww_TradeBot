@@ -245,7 +245,11 @@ def initialize_bot():
     
     # Initialize WebSocket manager
     ws_manager = WebSocketManager(API_KEY)
-    
+
+    # Connect paper trading simulator to WebSocket manager for price synchronization
+    if PAPER_TRADING_ENABLED and hasattr(tsl, 'set_ws_manager'):
+        tsl.set_ws_manager(ws_manager)
+
     # Initialize RL components
     if RL_ENABLED:
         print("\n🧠 Initializing RL Components...")
@@ -545,13 +549,14 @@ def execute_rl_enhanced_trade(
         print(f"   Target: ₹{target:.2f} (RR: 1:{adjusted_rr:.1f})")
         print(f"   Lots: {adjusted_lots} (base: {base_lots})")
         
-        # Place order
+        # Place order (pass entry_price so simulator uses consistent price)
         order_result = tsl.place_order(
             symbol=option_symbol,
             exchange=tsl.NFO,
             transaction_type=tsl.BUY,
             quantity=quantity,
             order_type=tsl.ORDER_TYPE_MARKET,
+            price=entry_price,
             product_type=tsl.PRODUCT_INTRADAY
         )
         
