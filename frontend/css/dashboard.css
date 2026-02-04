@@ -1,0 +1,357 @@
+/*
+ * Groww TradeBot Dashboard Layout & Page Styles
+ * Extends the design system with dashboard-specific layout and components.
+ */
+
+/* ========================================
+   LAYOUT
+   ======================================== */
+
+body {
+    display: flex;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    transition: width var(--transition-base);
+}
+
+.sidebar-header {
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary);
+    color: var(--text-inverse);
+    font-weight: var(--font-bold);
+    font-size: var(--text-lg);
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+}
+
+.logo-text {
+    font-size: var(--text-base);
+    font-weight: var(--font-bold);
+    white-space: nowrap;
+}
+
+/* --- Navigation --- */
+.nav-menu {
+    list-style: none;
+    padding: var(--space-4);
+    flex: 1;
+    overflow-y: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-bottom: var(--space-1);
+}
+
+.nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+}
+
+.nav-item svg {
+    flex-shrink: 0;
+}
+
+/* --- Sidebar Footer --- */
+.sidebar-footer {
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.bot-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.status-dot.status-active {
+    background: var(--color-success);
+    box-shadow: 0 0 6px var(--color-success);
+    animation: pulse 2s infinite;
+}
+
+.status-dot.status-inactive {
+    background: var(--text-tertiary);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+
+/* --- Main Content --- */
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    height: 100vh;
+    overflow-y: auto;
+    transition: margin-left var(--transition-base);
+}
+
+/* --- Top Bar --- */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-8);
+    height: var(--topbar-height);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.page-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+}
+
+.market-time {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: var(--text-xs);
+}
+
+.market-time .label {
+    color: var(--text-tertiary);
+}
+
+.market-time .value {
+    font-weight: var(--font-semibold);
+    color: var(--text-secondary);
+}
+
+
+/* ========================================
+   PAGE SECTIONS
+   ======================================== */
+
+.page {
+    display: none;
+    padding: var(--space-8);
+}
+
+.page.active {
+    display: block;
+    animation: fadeIn 200ms ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ========================================
+   CHART & DATA COMPONENTS
+   ======================================== */
+
+/* --- Chart Placeholder --- */
+.chart-placeholder {
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.chart-placeholder canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* --- Signal Bars --- */
+.signal-bars {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.signal-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.signal-label {
+    width: 80px;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bar-fill.positive { background: var(--color-success); }
+.bar-fill.warning { background: var(--color-warning); }
+.bar-fill.negative { background: var(--color-danger); }
+
+.signal-value {
+    width: 40px;
+    text-align: right;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ========================================
+   RL AGENT & LOG COMPONENTS
+   ======================================== */
+
+.log-entries {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+}
+
+.log-time {
+    font-family: var(--font-mono);
+    color: var(--text-tertiary);
+    font-size: var(--text-xs);
+    flex-shrink: 0;
+}
+
+/* --- Parameter List --- */
+.param-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.param-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: var(--text-sm);
+}
+
+.param-row:last-child {
+    border-bottom: none;
+}
+
+.param-row span:first-child {
+    color: var(--text-secondary);
+}
+
+/* --- Indicator Details --- */
+.indicator-detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+
+/* ========================================
+   SCROLLBAR STYLING
+   ======================================== */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color-strong);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}

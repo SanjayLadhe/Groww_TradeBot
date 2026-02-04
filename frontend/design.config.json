@@ -1,0 +1,98 @@
+{
+    "name": "Groww TradeBot Design System",
+    "version": "1.0.0",
+    "description": "Frontend design system for the Groww algorithmic trading bot dashboard",
+    "themes": {
+        "dark": {
+            "background": {
+                "primary": "#0a0e17",
+                "secondary": "#111827",
+                "tertiary": "#1a2332",
+                "elevated": "#1e293b"
+            },
+            "text": {
+                "primary": "#f1f5f9",
+                "secondary": "#94a3b8",
+                "tertiary": "#64748b"
+            },
+            "brand": {
+                "primary": "#00d09c",
+                "accent": "#5b6cf0"
+            }
+        },
+        "light": {
+            "background": {
+                "primary": "#ffffff",
+                "secondary": "#f8fafc",
+                "tertiary": "#f1f5f9",
+                "elevated": "#ffffff"
+            },
+            "text": {
+                "primary": "#0f172a",
+                "secondary": "#475569",
+                "tertiary": "#94a3b8"
+            },
+            "brand": {
+                "primary": "#00b386",
+                "accent": "#4f46e5"
+            }
+        }
+    },
+    "semantic": {
+        "success": "#00c853",
+        "danger": "#ff1744",
+        "warning": "#ffa726",
+        "info": "#29b6f6"
+    },
+    "typography": {
+        "fontFamily": {
+            "sans": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            "mono": "JetBrains Mono, Fira Code, Consolas, monospace"
+        },
+        "scale": {
+            "xs": "0.75rem",
+            "sm": "0.875rem",
+            "base": "1rem",
+            "lg": "1.125rem",
+            "xl": "1.25rem",
+            "2xl": "1.5rem",
+            "3xl": "2rem"
+        }
+    },
+    "spacing": {
+        "unit": "0.25rem",
+        "scale": [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3]
+    },
+    "borderRadius": {
+        "sm": "4px",
+        "md": "8px",
+        "lg": "12px",
+        "xl": "16px",
+        "full": "9999px"
+    },
+    "breakpoints": {
+        "sm": "640px",
+        "md": "768px",
+        "lg": "1024px",
+        "xl": "1280px"
+    },
+    "components": [
+        "buttons",
+        "badges",
+        "cards",
+        "stat-cards",
+        "tables",
+        "forms",
+        "navigation",
+        "charts",
+        "log-entries"
+    ],
+    "pages": [
+        "dashboard",
+        "trades",
+        "rl-agent",
+        "indicators",
+        "paper-trading",
+        "settings"
+    ]
+}

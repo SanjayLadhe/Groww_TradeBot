@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groww TradeBot Dashboard</title>
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">G</span>
+                <span class="logo-text">Groww TradeBot</span>
+            </div>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" data-page="dashboard">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span>Dashboard</span>
+            </li>
+            <li class="nav-item" data-page="trades">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span>Trades</span>
+            </li>
+            <li class="nav-item" data-page="rl-agent">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                <span>RL Agent</span>
+            </li>
+            <li class="nav-item" data-page="indicators">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span>Indicators</span>
+            </li>
+            <li class="nav-item" data-page="paper-trading">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>Paper Trading</span>
+            </li>
+            <li class="nav-item" data-page="settings">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                <span>Settings</span>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="bot-status">
+                <span class="status-dot status-inactive"></span>
+                <span class="status-label">Bot Offline</span>
+            </div>
+            <button class="btn btn-sm btn-primary" id="toggleBot">Start Bot</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <h1 class="page-title">Dashboard</h1>
+                <span class="badge badge-warning">Paper Trading</span>
+            </div>
+            <div class="top-bar-right">
+                <button class="btn btn-ghost btn-icon" id="themeToggle" title="Toggle theme">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                </button>
+                <div class="market-time">
+                    <span class="label">Market</span>
+                    <span class="value" id="marketStatus">Closed</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Page -->
+        <section class="page active" id="page-dashboard">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Portfolio Value</div>
+                    <div class="stat-value">&#8377;10,00,000</div>
+                    <div class="stat-change positive">+2.4%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Today's P&L</div>
+                    <div class="stat-value positive">+&#8377;12,450</div>
+                    <div class="stat-change positive">+1.2%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Open Positions</div>
+                    <div class="stat-value">3</div>
+                    <div class="stat-change neutral">CE: 2 | PE: 1</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value">68%</div>
+                    <div class="stat-change positive">+3% this week</div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>P&L Chart</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-ghost active">1D</button>
+                            <button class="btn btn-sm btn-ghost">1W</button>
+                            <button class="btn btn-sm btn-ghost">1M</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-placeholder" id="pnlChart">
+                            <canvas id="pnlCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Signal Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="signal-bars">
+                            <div class="signal-bar">
+                                <span class="signal-label">VWAP</span>
+                                <div class="bar-track"><div class="bar-fill positive" style="width: 72%"></div></div>
+                                <span class="signal-value">72%</span>
+                            </div>
+                            <div class="signal-bar">
+                                <span class="signal-label">ADX</span>
+                                <div class="bar-track"><div class="bar-fill warning" style="width: 45%"></div></div>
+                                <span class="signal-value">45%</span>
+                            </div>
+                            <div class="signal-bar">
+                                <span class="signal-label">ATR Stop</span>
+                                <div class="bar-track"><div class="bar-fill positive" style="width: 88%"></div></div>
+                                <span class="signal-value">88%</span>
+                            </div>
+                            <div class="signal-bar">
+                                <span class="signal-label">Fractal</span>
+                                <div class="bar-track"><div class="bar-fill negative" style="width: 31%"></div></div>
+                                <span class="signal-value">31%</span>
+                            </div>
+                            <div class="signal-bar">
+                                <span class="signal-label">RL Agent</span>
+                                <div class="bar-track"><div class="bar-fill positive" style="width: 65%"></div></div>
+                                <span class="signal-value">65%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Recent Trades</h3>
+                    <a href="#" class="link" data-page="trades">View all</a>
+                </div>
+                <div class="card-body no-padding">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Entry</th>
+                                <th>Exit</th>
+                                <th>Qty</th>
+                                <th>P&L</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>09:45:12</td>
+                                <td class="font-mono">NIFTY 24500 CE</td>
+                                <td><span class="badge badge-success">CE</span></td>
+                                <td>245.50</td>
+                                <td>278.30</td>
+                                <td>50</td>
+                                <td class="positive">+&#8377;1,640</td>
+                                <td><span class="badge badge-success">Closed</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:12:30</td>
+                                <td class="font-mono">NIFTY 24400 PE</td>
+                                <td><span class="badge badge-danger">PE</span></td>
+                                <td>180.00</td>
+                                <td>--</td>
+                                <td>25</td>
+                                <td class="positive">+&#8377;875</td>
+                                <td><span class="badge badge-warning">Open</span></td>
+                            </tr>
+                            <tr>
+                                <td>10:30:45</td>
+                                <td class="font-mono">BANKNIFTY 52000 CE</td>
+                                <td><span class="badge badge-success">CE</span></td>
+                                <td>410.25</td>
+                                <td>385.00</td>
+                                <td>25</td>
+                                <td class="negative">-&#8377;631</td>
+                                <td><span class="badge badge-danger">SL Hit</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trades Page -->
+        <section class="page" id="page-trades">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Trade History</h3>
+                    <div class="top-bar-right">
+                        <select class="select">
+                            <option>All Types</option>
+                            <option>CE Only</option>
+                            <option>PE Only</option>
+                        </select>
+                        <select class="select">
+                            <option>Today</option>
+                            <option>This Week</option>
+                            <option>This Month</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body no-padding">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Entry</th>
+                                <th>Exit</th>
+                                <th>Qty</th>
+                                <th>P&L</th>
+                                <th>RL Score</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradeTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- RL Agent Page -->
+        <section class="page" id="page-rl-agent">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Model Status</div>
+                    <div class="stat-value" style="font-size: 1.25rem;">Trained</div>
+                    <div class="stat-change neutral">PPO v2.1</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Confidence</div>
+                    <div class="stat-value">0.78</div>
+                    <div class="stat-change positive">Above threshold</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Signals Filtered</div>
+                    <div class="stat-value">34%</div>
+                    <div class="stat-change positive">Improved accuracy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Training Episodes</div>
+                    <div class="stat-value">5,000</div>
+                    <div class="stat-change neutral">Last: 2 days ago</div>
+                </div>
+            </div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header"><h3>RL Decision Log</h3></div>
+                    <div class="card-body">
+                        <div class="log-entries" id="rlLog">
+                            <div class="log-entry">
+                                <span class="log-time">10:30:12</span>
+                                <span class="badge badge-success">ACCEPT</span>
+                                <span>CE signal for NIFTY 24500 | Confidence: 0.82 | Size: 1.2x</span>
+                            </div>
+                            <div class="log-entry">
+                                <span class="log-time">10:28:45</span>
+                                <span class="badge badge-danger">REJECT</span>
+                                <span>PE signal for BANKNIFTY 52000 | Confidence: 0.34 | Below threshold</span>
+                            </div>
+                            <div class="log-entry">
+                                <span class="log-time">10:15:30</span>
+                                <span class="badge badge-success">ACCEPT</span>
+                                <span>CE signal for NIFTY 24500 | Confidence: 0.91 | Size: 1.5x</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Hyperparameters</h3></div>
+                    <div class="card-body">
+                        <div class="param-list">
+                            <div class="param-row"><span>Learning Rate</span><code>3e-4</code></div>
+                            <div class="param-row"><span>Gamma (Discount)</span><code>0.99</code></div>
+                            <div class="param-row"><span>GAE Lambda</span><code>0.95</code></div>
+                            <div class="param-row"><span>Clip Range</span><code>0.2</code></div>
+                            <div class="param-row"><span>Entropy Coeff</span><code>0.01</code></div>
+                            <div class="param-row"><span>Batch Size</span><code>64</code></div>
+                            <div class="param-row"><span>Min Confidence</span><code>0.6</code></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Indicators Page -->
+        <section class="page" id="page-indicators">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>VWAP</h3>
+                        <span class="badge badge-success">Active</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="indicator-detail">
+                            <div class="param-row"><span>Current VWAP</span><code>24,512.30</code></div>
+                            <div class="param-row"><span>Price vs VWAP</span><code class="positive">+0.12%</code></div>
+                            <div class="param-row"><span>Signal</span><span class="badge badge-success">Bullish</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>ADX</h3>
+                        <span class="badge badge-success">Active</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="indicator-detail">
+                            <div class="param-row"><span>ADX Value</span><code>28.5</code></div>
+                            <div class="param-row"><span>+DI</span><code>32.1</code></div>
+                            <div class="param-row"><span>-DI</span><code>18.7</code></div>
+                            <div class="param-row"><span>Trend</span><span class="badge badge-success">Strong Uptrend</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>ATR Trailing Stop</h3>
+                        <span class="badge badge-success">Active</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="indicator-detail">
+                            <div class="param-row"><span>ATR (14)</span><code>156.20</code></div>
+                            <div class="param-row"><span>Multiplier</span><code>2.5x</code></div>
+                            <div class="param-row"><span>Stop Level</span><code>24,122.80</code></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Fractal Chaos Bands</h3>
+                        <span class="badge badge-warning">Weak Signal</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="indicator-detail">
+                            <div class="param-row"><span>Upper Band</span><code>24,680.00</code></div>
+                            <div class="param-row"><span>Middle</span><code>24,510.00</code></div>
+                            <div class="param-row"><span>Lower Band</span><code>24,340.00</code></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Paper Trading Page -->
+        <section class="page" id="page-paper-trading">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Paper Balance</div>
+                    <div class="stat-value">&#8377;10,12,450</div>
+                    <div class="stat-change positive">+1.25% from start</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Trades</div>
+                    <div class="stat-value">47</div>
+                    <div class="stat-change neutral">32W / 15L</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Max Drawdown</div>
+                    <div class="stat-value negative">-2.1%</div>
+                    <div class="stat-change neutral">Within limits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Sharpe Ratio</div>
+                    <div class="stat-value">1.85</div>
+                    <div class="stat-change positive">Good</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Paper Trading Configuration</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Initial Capital</label>
+                            <input type="text" class="input" value="10,00,000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Position Size</label>
+                            <input type="text" class="input" value="50">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Stop Loss %</label>
+                            <input type="text" class="input" value="2.0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Target %</label>
+                            <input type="text" class="input" value="3.0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Page -->
+        <section class="page" id="page-settings">
+            <div class="card">
+                <div class="card-header"><h3>Bot Configuration</h3></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Trading Mode</label>
+                            <select class="select">
+                                <option>Paper Trading</option>
+                                <option>Live Trading</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">RL Agent</label>
+                            <select class="select">
+                                <option>Enabled</option>
+                                <option>Disabled</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <input type="password" class="input" placeholder="Enter Groww API key">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">API Secret</label>
+                            <input type="password" class="input" placeholder="Enter Groww API secret">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>Appearance</h3></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Theme</label>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-ghost" id="lightThemeBtn">Light</button>
+                            <button class="btn btn-sm btn-primary" id="darkThemeBtn">Dark</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
