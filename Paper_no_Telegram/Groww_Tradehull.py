@@ -471,6 +471,41 @@ class Tradehull:
             logger.error(f"Get quote error for {symbol}: {e}")
             return {}
 
+    # Interval mapping from shorthand to GrowwAPI candle_interval constants
+    _INTERVAL_MAP = {
+        "1m": "1minute", "2m": "2minute", "3m": "3minute",
+        "5m": "5minute", "10m": "10minute", "15m": "15minute",
+        "30m": "30minute", "1h": "1hour", "4h": "4hour",
+        "1d": "1day", "1w": "1week", "1M": "1month",
+        # Also accept the raw GrowwAPI values
+        "1minute": "1minute", "2minute": "2minute", "3minute": "3minute",
+        "5minute": "5minute", "10minute": "10minute", "15minute": "15minute",
+        "30minute": "30minute", "1hour": "1hour", "4hour": "4hour",
+        "1day": "1day", "1week": "1week", "1month": "1month",
+    }
+
+    # Interval to minutes mapping for calculating lookback periods
+    _INTERVAL_MINUTES = {
+        "1m": 1, "2m": 2, "3m": 3, "5m": 5, "10m": 10,
+        "15m": 15, "30m": 30, "1h": 60, "4h": 240,
+        "1d": 1440, "1w": 10080, "1M": 43200,
+        "1minute": 1, "2minute": 2, "3minute": 3, "5minute": 5,
+        "10minute": 10, "15minute": 15, "30minute": 30,
+        "1hour": 60, "4hour": 240, "1day": 1440,
+        "1week": 10080, "1month": 43200,
+    }
+
+    def _map_exchange_to_segment(self, exchange: str) -> str:
+        """Map exchange string to the appropriate segment for the Groww API."""
+        segment_map = {
+            "NSE": self.SEGMENT_CASH,
+            "BSE": self.SEGMENT_CASH,
+            "NFO": self.SEGMENT_FNO,
+            "BFO": self.SEGMENT_FNO,
+            "MCX": self.SEGMENT_COMMODITY,
+        }
+        return segment_map.get(exchange, self.SEGMENT_CASH)
+
     def get_historical_data(
         self,
         symbol: str,
@@ -482,34 +517,88 @@ class Tradehull:
         """
         Get historical candle data.
 
+        Uses the GrowwAPI.get_historical_candles (V2) endpoint.
+
         Args:
-            symbol: Trading symbol
-            exchange: Exchange
-            interval: Candle interval ('1m', '3m', '5m', '15m', '30m', '1h', '1d')
+            symbol: Trading symbol (e.g., 'RELIANCE', 'TCS')
+            exchange: Exchange (NSE, BSE, NFO, MCX)
+            interval: Candle interval ('1m', '3m', '5m', '15m', '30m', '1h', '1d'
+                      or full form like '5minute', '1day')
             from_date: Start date
             to_date: End date (default: now)
 
         Returns:
-            DataFrame with OHLCV data
+            DataFrame with OHLCV data (indexed by timestamp)
         """
         try:
             if to_date is None:
                 to_date = datetime.now()
 
-            historical = self.groww.get_historical_data(
-                symbol=symbol,
+            candle_interval = self._INTERVAL_MAP.get(interval)
+            if candle_interval is None:
+                logger.error(f"Unsupported interval: {interval}. "
+                             f"Supported: {list(self._INTERVAL_MAP.keys())}")
+                return pd.DataFrame()
+
+            segment = self._map_exchange_to_segment(exchange)
+
+            start_str = from_date.strftime("%Y-%m-%d %H:%M:%S")
+            end_str = to_date.strftime("%Y-%m-%d %H:%M:%S")
+
+            historical = self.groww.get_historical_candles(
                 exchange=exchange,
-                interval=interval,
-                from_date=from_date.strftime("%Y-%m-%d"),
-                to_date=to_date.strftime("%Y-%m-%d")
+                segment=segment,
+                groww_symbol=symbol,
+                start_time=start_str,
+                end_time=end_str,
+                candle_interval=candle_interval,
             )
 
-            if historical and len(historical) > 0:
-                df = pd.DataFrame(historical)
-                df.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
-                df['timestamp'] = pd.to_datetime(df['timestamp'])
-                df.set_index('timestamp', inplace=True)
-                return df
+            if historical and isinstance(historical, dict):
+                # V2 response: extract candle list from the response dict
+                candles = historical.get("candles", historical.get("data", []))
+                if not candles and isinstance(historical, list):
+                    candles = historical
+
+                if candles and len(candles) > 0:
+                    df = pd.DataFrame(candles)
+                    # Normalise column names – the API may return different formats
+                    col_map = {}
+                    for col in df.columns:
+                        lower = col.lower()
+                        if lower in ('timestamp', 'time', 'date', 'datetime', 't'):
+                            col_map[col] = 'timestamp'
+                        elif lower in ('open', 'o'):
+                            col_map[col] = 'open'
+                        elif lower in ('high', 'h'):
+                            col_map[col] = 'high'
+                        elif lower in ('low', 'l'):
+                            col_map[col] = 'low'
+                        elif lower in ('close', 'c'):
+                            col_map[col] = 'close'
+                        elif lower in ('volume', 'v', 'vol'):
+                            col_map[col] = 'volume'
+                    if col_map:
+                        df.rename(columns=col_map, inplace=True)
+
+                    # If columns are still numeric (list-of-lists), assign names
+                    if set(df.columns) == set(range(len(df.columns))):
+                        expected_cols = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+                        if len(df.columns) >= len(expected_cols):
+                            df.columns = expected_cols[:len(df.columns)]
+                        else:
+                            df.columns = expected_cols[:len(df.columns)]
+
+                    if 'timestamp' in df.columns:
+                        df['timestamp'] = pd.to_datetime(df['timestamp'])
+                        df.set_index('timestamp', inplace=True)
+
+                    # Ensure numeric types
+                    for col in ['open', 'high', 'low', 'close', 'volume']:
+                        if col in df.columns:
+                            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+                    return df
 
             return pd.DataFrame()
 
@@ -538,12 +627,7 @@ class Tradehull:
         """
         try:
             # Calculate from_date based on interval and num_candles
-            interval_minutes = {
-                "1m": 1, "3m": 3, "5m": 5, "15m": 15, "30m": 30,
-                "1h": 60, "1d": 1440
-            }
-
-            minutes = interval_minutes.get(interval, 5)
+            minutes = self._INTERVAL_MINUTES.get(interval, 5)
             from_date = datetime.now() - timedelta(minutes=minutes * num_candles * 2)
 
             df = self.get_historical_data(
